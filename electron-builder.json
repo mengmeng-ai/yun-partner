@@ -1,0 +1,1 @@
+{"appId":"com.yunyun.companion","asar":true,"directories":{"output":"dist"},"files":["dist-electron/**/*","dist-renderer/**/*","package.json"],"linux":{"target":["AppImage"]},"productName":"允允的数字伙伴","win":{"target":["nsis"]},"publish":{"provider":"github","owner":"mengmeng-ai","repo":"yun-partner"}}

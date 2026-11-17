@@ -1,0 +1,48 @@
+# 在 Windows 上打包安装程序（NSIS .exe）。
+# 触发方式：
+# - 推送到 main：自动打包，成品在 Actions 页的 Artifacts 里下载（windows-installer）。
+# - 打标签 v* 并推送：除 Artifacts 外，还会在 Releases 里生成一个正式 Release，附带 .exe。
+# - Actions 页点 "Run workflow" 也可以手动触发。
+name: Build Windows installer
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      - run: npx electron-builder --win --publish never
+
+      - name: Upload installer as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            dist/*.exe
+          if-no-files-found: error
+
+      - name: Publish Release (tag builds only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.exe
+          fail_on_unmatched_files: true

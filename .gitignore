@@ -1,0 +1,8 @@
+node_modules/
+dist/
+dist-renderer/
+dist-electron/
+*.log
+.DS_Store
+# Local user data (API keys, password hashes, memory) — never commit.
+userData/
