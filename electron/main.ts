@@ -75,6 +75,12 @@ sandbox: false,
 });
 if (isDev) win.loadURL('http://127.0.0.1:5173');
 else win.loadFile(path.join(__dirname, '..', 'dist-renderer', 'index.html'));
+// Mic permission: Electron denies getUserMedia by default with no handler.
+// Grant ONLY 'media' (microphone) for this window — and only ever requested
+// when the user turns voice on in the Voice panel. Nothing else is granted.
+win.webContents.session.setPermissionRequestHandler((_webContents, permission, callback) => {
+callback(permission === 'media');
+});
 win.on('closed', () => { win = null;});
 }
 
@@ -446,6 +452,42 @@ return asst;
 });
 
 ipcMain.handle('chat:stop', () => { abort?.abort(); return true;});
+
+/**
+ * Full-duplex STT: transcribe one recorded speech segment with an
+ * OpenAI-compatible Whisper endpoint (/audio/transcriptions).
+ * Key: settings.whisperKey, or the main API key when provider is OpenAI.
+ * Audio arrives as base64 (IPC-safe); nothing is stored, only forwarded.
+ */
+ipcMain.handle('voice:transcribe', async (_e, payload: { audioB64: string; mimeType: string }) => {
+  const settings = store.settings;
+  const key = settings.whisperKey?.trim() || (settings.provider === 'openai' ? settings.apiKey : '');
+  if (!key) throw new Error('先在设置里填 Whisper Key（或把模型厂商切到 OpenAI 并填 Key）');
+  const baseUrl = (settings.whisperBaseUrl?.trim() || 'https://api.openai.com/v1').replace(/\/$/, '');
+  const buf = Buffer.from(payload.audioB64, 'base64');
+  if (buf.length === 0) throw new Error('录音是空的');
+  const file = new File([buf], 'speech.webm', { type: payload.mimeType || 'audio/webm' });
+  const form = new FormData();
+  form.append('file', file);
+  form.append('model', 'whisper-1');
+  form.append('language', 'zh');
+  let res: Response;
+  try {
+    res = await fetch(`${baseUrl}/audio/transcriptions`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}` },
+      body: form,
+    });
+  } catch (err) {
+    throw new Error(`连不上语音识别服务：${(err as Error).message}`);
+  }
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`语音识别报错 HTTP ${res.status}：${redact(text.slice(0, 200))}`);
+  }
+  const data = await res.json() as { text?: string };
+  return { text: (data.text ?? '').trim() };
+});
 
 app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow();});
 });
