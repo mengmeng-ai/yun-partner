@@ -1,1 +1,37 @@
-{"dependencies":{"@monaco-editor/react":"^4.7.0","electron-updater":"^6.8.11","mammoth":"^1.13.0","pdf-parse":"^2.4.5","react":"^19.1.0","react-dom":"^19.1.0","xlsx":"^0.18.5"},"description":"Clean-room desktop companion MVP built from Aivy OS public documentation only. No Aivy OS code, assets, or activation logic.","devDependencies":{"@types/node":"^22.15.0","@types/react":"^19.1.0","@types/react-dom":"^19.1.0","@vitejs/plugin-react":"^4.4.1","concurrently":"^9.1.2","electron":"^36.0.0","electron-builder":"^26.0.12","typescript":"^5.8.3","vite":"^6.3.5","wait-on":"^8.0.3"},"main":"dist-electron/main.js","name":"yun-partner","private":true,"scripts":{"build":"tsc -p tsconfig.node.json && vite build","dev":"concurrently \"vite\" \"wait-on http://127.0.0.1:5173 && electron .\"","dist":"npm run build && electron-builder --linux","dist:win":"npm run build && electron-builder --win","start":"electron .","typecheck":"tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.json --noEmit"},"type":"commonjs","version":"0.2.0"}
+{
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "electron-updater": "^6.8.11",
+    "mammoth": "^1.13.0",
+    "pdf-parse": "^2.4.5",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "xlsx": "^0.18.5"
+  },
+  "description": "Clean-room desktop companion MVP built from Aivy OS public documentation only. No Aivy OS code, assets, or activation logic.",
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "concurrently": "^9.1.2",
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "wait-on": "^8.0.3"
+  },
+  "main": "dist-electron/main.js",
+  "name": "yun-partner",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.node.json && vite build",
+    "dev": "concurrently \"vite\" \"wait-on http://127.0.0.1:5173 && electron .\"",
+    "dist": "npm run build && electron-builder --linux",
+    "dist:win": "npm run build && electron-builder --win",
+    "start": "electron .",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.json --noEmit"
+  },
+  "type": "commonjs",
+  "version": "0.3.0"
+}
