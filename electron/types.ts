@@ -12,6 +12,12 @@ export interface Settings {
   temperature: number;
   /** Optional ElevenLabs API key for voice synthesis (voice panel, default off). */
   elevenLabsKey?: string;
+  /** Optional ElevenLabs voice ID for full-duplex TTS. Defaults to her approved voice when empty. */
+  elevenLabsVoiceId?: string;
+  /** Optional Whisper key for full-duplex STT (OpenAI-compatible /audio/transcriptions). */
+  whisperKey?: string;
+  /** Whisper-compatible base URL. Defaults to https://api.openai.com/v1 when empty. */
+  whisperBaseUrl?: string;
   /** Registered MCP servers (on-demand connect only, never auto-connected). */
   mcpServers?: McpServerConfig[];
 }
