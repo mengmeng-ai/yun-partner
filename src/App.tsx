@@ -80,11 +80,18 @@ export default function App() {
   const [sysStatus, setSysStatus] = useState<any>(null);
   const [dueNotes, setDueNotes] = useState<any[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // Waiters resolved when a chat turn finishes (used by sendVoice after a barge-in stop).
+  const chatDoneWaiters = useRef<(() => void)[]>([]);
 
   useEffect(() => { refreshAll(); }, []);
   useEffect(() => {
     window.api.onChatDelta((t) => setStreamText((s) => s + t));
-    window.api.onChatDone(() => { setStreaming(false); setStreamText(''); refreshHistory(); });
+    window.api.onChatDone(() => {
+      setStreaming(false); setStreamText(''); refreshHistory();
+      const waiters = chatDoneWaiters.current;
+      chatDoneWaiters.current = [];
+      waiters.forEach((r) => r());
+    });
     window.api.onApproval((r) => setApproval(r));
     window.api.onTeamUpdate(() => { void refreshTeam(); });
     window.api.onSchedulerDue((t: any) => { setDueNotes((n) => [...n, { kind: '提醒', ...t }]); });
@@ -137,6 +144,23 @@ export default function App() {
     try { await window.api.sendChat(t); } catch (e) { setNotice(`发送失败：${(e as Error).message}`); setStreaming(false); }
   }
   async function send() { await sendDirect(input); }
+
+  /** Voice turn with barge-in: if a reply is streaming, stop it first and
+   * wait for the turn to finish (max 3s) so the new turn starts clean
+   * instead of interleaving two streams. */
+  async function sendVoice(text: string) {
+    const t = text.trim();
+    if (!t) return;
+    if (streaming) {
+      try { await window.api.stopChat(); } catch { /* already stopped */ }
+      await new Promise<void>((resolve) => {
+        chatDoneWaiters.current.push(resolve);
+        window.setTimeout(resolve, 3000);
+      });
+      setStreaming(false); setStreamText('');
+    }
+    await sendDirect(t);
+  }
 
   async function openFile(name: string) {
     const ext = name.split('.').pop()?.toLowerCase() ?? '';
@@ -293,8 +317,15 @@ export default function App() {
             onToggleTts={() => setTtsEnabled((v) => !v)}
             elevenKey={settings?.elevenLabsKey ?? ''}
             onElevenKey={(k) => { if (settings) setSettings({ ...settings, elevenLabsKey: k }); }}
+            elevenVoiceId={settings?.elevenLabsVoiceId ?? ''}
+            onElevenVoiceId={(id) => { if (settings) setSettings({ ...settings, elevenLabsVoiceId: id }); }}
+            whisperKey={settings?.whisperKey ?? ''}
+            streamText={streamText}
+            isStreaming={streaming}
+            onVoiceSend={(text) => { void sendVoice(text); }}
+            onStopChat={() => { void window.api.stopChat(); }}
           />
-          <p style={{ fontSize: 12, color: '#8fa1b5' }}>标准语音：点按说话，不是全双工——说话时打断不了她。ElevenLabs Key 填在上面，只存你电脑本地。</p>
+          <p style={{ fontSize: 12, color: '#8fa1b5' }}>全双工默认关着，开了就能连续对话、随时打断。点按说话一直能用。Key 改完记得去“设置”点保存设置，不然重启就没了。</p>
         </div>
       )}
 
@@ -394,6 +425,12 @@ export default function App() {
           <input type="password" value={settings.apiKey} onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })} placeholder="sk-…" />
           <label>ElevenLabs Key（语音合成用，不填就用系统语音，可空）</label>
           <input type="password" value={settings.elevenLabsKey ?? ''} onChange={(e) => setSettings({ ...settings, elevenLabsKey: e.target.value })} placeholder="sk-…（可选）" />
+          <label>ElevenLabs 音色 ID（全双工朗读用，可空，默认用她定的那个）</label>
+          <input value={settings.elevenLabsVoiceId ?? ''} onChange={(e) => setSettings({ ...settings, elevenLabsVoiceId: e.target.value })} placeholder="rwqMGOiqHoMg2K6ItclK" />
+          <label>Whisper Key（全双工识别用；不填就只能靠网页语音，可空）</label>
+          <input type="password" value={settings.whisperKey ?? ''} onChange={(e) => setSettings({ ...settings, whisperKey: e.target.value })} placeholder="sk-…（可选）" />
+          <label>Whisper 地址（可空，默认 https://api.openai.com/v1）</label>
+          <input value={settings.whisperBaseUrl ?? ''} onChange={(e) => setSettings({ ...settings, whisperBaseUrl: e.target.value })} placeholder="https://api.openai.com/v1" />
           <label>工作区（工具只能碰这里）</label>
           <div style={{ display: 'flex', gap: 8 }}>
             <input value={settings.workspace} readOnly />
