@@ -23,6 +23,7 @@ export interface Api {
   readFile: (rel: string) => Promise<string>;
   sendChat: (text: string) => Promise<any>;
   stopChat: () => Promise<boolean>;
+  transcribeVoice: (audioB64: string, mimeType: string) => Promise<{ text: string }>;
   respondApproval: (id: string, ok: boolean) => void;
   onChatDelta: (cb: (t: string) => void) => void;
   onChatDone: (cb: (m: any) => void) => void;
