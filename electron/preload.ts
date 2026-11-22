@@ -26,6 +26,8 @@ contextBridge.exposeInMainWorld('api', {
   readFile: (rel: string) => ipcRenderer.invoke('files:read', rel),
   sendChat: (text: string) => ipcRenderer.invoke('chat:send', text),
   stopChat: () => ipcRenderer.invoke('chat:stop'),
+  // Full-duplex STT: transcribe one recorded segment via Whisper (main process).
+  transcribeVoice: (audioB64: string, mimeType: string) => ipcRenderer.invoke('voice:transcribe', { audioB64, mimeType }),
   respondApproval: (id: string, ok: boolean) => ipcRenderer.send('approval:respond', id, ok),
   onChatDelta: (cb: (t: string) => void) => ipcRenderer.on('chat:delta', (_e, t: string) => cb(t)),
   onChatDone: (cb: (m: unknown) => void) => ipcRenderer.on('chat:done', (_e, m: unknown) => cb(m)),
